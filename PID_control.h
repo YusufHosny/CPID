@@ -8,7 +8,8 @@
 #include <time.h>
 #include <stddef.h>
 #include <stdbool.h>
-
+#include <stdio.h>
+#include <time.h>
 
 typedef struct {
     double Kp;
@@ -36,12 +37,19 @@ typedef struct {
  */
 void initialize_PID(PID_Controller_t* controller, double _Kp, double _Ki, double _Kd, double _ref, double _upper_lim, double _lower_lim);
 
+/** Calculate a single step with a PID controller.
+ * \param controller A reference to the controller that this function will calculate a step for.
+ * \param cur The current reading being input into the controller. It will be used to calculate the error.
+ * \param dt The time difference between the last 2 consecutive samples.
+ * \return The output (manipulated variable) of the PID controller that will be passed into the actuator.
+ */
+double step(PID_Controller_t* controller, double cur, double dt);
 
 /** Calculate a single step with a PID controller.
  * \param controller A reference to the controller that this function will calculate a step for.
  * \param cur The current reading being input into the controller. It will be used to calculate the error.
  * \return The output (manipulated variable) of the PID controller that will be passed into the actuator.
  */
-double step(PID_Controller_t* controller, double cur);
+double step_live(PID_Controller_t* controller, double cur);
 
 #endif //PID_CONTROL_PID_CONTROL_H

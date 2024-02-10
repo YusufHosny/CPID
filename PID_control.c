@@ -19,24 +19,32 @@ void initialize_PID(PID_Controller_t* controller, double _Kp, double _Ki, double
 
     // indicates if it's the first time the controller is run, so there won't be integral or derivative action for the first iteration
     controller->initial = true;
+
+    // set upper and lower limits
+    controller->upper_lim = _upper_lim;
+    controller->lower_lim = _lower_lim;
 }
 
 
 // clamps the output value to the limits of the controller.
 double clamp(PID_Controller_t* controller, double val) {
+    double out;
     if(val > controller->upper_lim) {
-        val = controller->upper_lim;
+        out = controller->upper_lim;
     }
     else if(val < controller->lower_lim) {
-        val = controller->lower_lim;
+        out = controller->lower_lim;
     }
-
-    return val;
+    else {
+        out = val;
+    }
+    return out;
 }
 
 
-double step(PID_Controller_t* controller, double cur) {
-    time_t current_time = time(NULL);
+double step(PID_Controller_t* controller, double cur, double dt) {
+    struct timespec current_time;
+    if(timespec_get(&current_time, TIME_UTC) == 0) printf("ERROR GETTING TIMESPEC");
 
     double error = controller->ref - cur;
 
@@ -45,7 +53,6 @@ double step(PID_Controller_t* controller, double cur) {
 
     // delta error and delta t
     double de = error - controller->prev_error;
-    time_t dt = current_time - controller->prev_time;
 
     // derivative action and integral action if it's not the first iteration
     double derivative;
@@ -66,11 +73,21 @@ double step(PID_Controller_t* controller, double cur) {
 
     // update persistent variables
     controller->prev_error = error;
-    controller->prev_time = current_time;
+    controller->prev_time = current_time.tv_sec + (current_time.tv_nsec * 1e-9);
 
     // clamp output
     output = clamp(controller, output);
 
     return output;
 }
+
+double step_live(PID_Controller_t* controller, double cur) {
+    struct timespec current_time;
+    if(timespec_get(&current_time, TIME_UTC) != 0) printf("ERROR GETTING TIMESPEC");
+
+    double dt = current_time.tv_sec + (current_time.tv_nsec * 1e-9) - controller->prev_time;
+
+    return step(controller, cur, dt);
+}
+
 
